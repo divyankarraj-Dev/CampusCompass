@@ -1,0 +1,4 @@
+# Compass runs on the Python standard library alone (Python 3.8+).
+# Both packages below are OPTIONAL:
+colorama     # coloured text in the terminal (--cli) mode
+wikipedia    # needed only for the "wiki <topic>" command (also needs internet)

@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compass – AI Campus Assistant</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AD%3C/text%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#f1f4fb; --panel:#ffffff; --text:#1a2138; --muted:#667085; --line:#e3e8f2;
+  --brand:#4f46e5; --brand-2:#0ea5e9; --ok:#16a34a; --bot:#eef1fb; --chip:#eef2ff; --chip-text:#3730a3;
+  --side-a:#1b2147; --side-b:#2a2f6b; --shadow:0 6px 24px rgba(30,41,90,.08);
+  --term-bg:#0d1224; --term-text:#d7def5;
+}
+:root[data-theme="dark"]{
+  --bg:#0c1020; --panel:#151a30; --text:#e8ecfb; --muted:#97a0c0; --line:#262d4d;
+  --brand:#7c83ff; --brand-2:#38bdf8; --ok:#4ade80; --bot:#1d2442; --chip:#212a52; --chip-text:#c7cbff;
+  --side-a:#0a0e1f; --side-b:#141a3a; --shadow:0 6px 24px rgba(0,0,0,.35);
+  --term-bg:#070a16; --term-text:#d7def5;
+}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;overflow:hidden}
+button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
+input,select{font:inherit;color:var(--text)}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+/* sidebar */
+.side{width:232px;flex:none;background:linear-gradient(170deg,var(--side-b),var(--side-a));color:#fff;display:flex;flex-direction:column;padding:22px 14px}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 22px}
+.logo{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--brand-2),var(--brand));display:grid;place-items:center;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,.3)}
+.brand b{font-size:20px;letter-spacing:.3px;display:block}
+.brand small{color:#aab3e6;font-size:11.5px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;padding:11px 12px;margin-bottom:6px;border-radius:10px;color:#c9d0f5;font-size:14.5px;text-align:left;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.08)}
+.nav button.active{background:rgba(255,255,255,.16);color:#fff;font-weight:600}
+.nav svg{width:19px;height:19px;flex:none}
+.side-foot{margin-top:auto;font-size:12px;color:#aab3e6;padding:0 8px}
+.side-foot button{display:flex;gap:8px;align-items:center;color:#dfe4ff;padding:9px 10px;margin:0 -10px 10px;border-radius:9px;width:calc(100% + 20px)}
+.side-foot button:hover{background:rgba(255,255,255,.08)}
+
+/* main */
+main{flex:1;min-width:0;padding:22px 26px;display:flex;flex-direction:column}
+.view{display:none;flex:1;min-height:0;flex-direction:column}
+.view.active{display:flex}
+h1{font-size:22px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+
+/* chat view */
+.chat-grid{flex:1;min-height:0;display:grid;grid-template-columns:1fr 290px;gap:18px}
+.chat{display:flex;flex-direction:column;min-height:0}
+.msgs{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+.row{display:flex;gap:10px;max-width:82%}
+.row.user{align-self:flex-end;flex-direction:row-reverse}
+.avatar{width:32px;height:32px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:15px;background:linear-gradient(135deg,var(--brand-2),var(--brand));color:#fff}
+.row.user .avatar{background:var(--chip);color:var(--chip-text);font-size:12px;font-weight:700}
+.bubble{padding:11px 15px;border-radius:16px;line-height:1.5;font-size:14.5px;white-space:pre-wrap;word-break:break-word;background:var(--bot);border-top-left-radius:4px}
+.row.user .bubble{background:linear-gradient(135deg,var(--brand),#6366f1);color:#fff;border-top-left-radius:16px;border-top-right-radius:4px}
+.meta{font-size:11.5px;color:var(--muted);margin-top:4px}
+.map-link{margin-top:8px;display:inline-block;padding:6px 12px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px;color:var(--brand);font-weight:600}
+.map-link:hover{border-color:var(--brand)}
+.typing{display:inline-flex;gap:4px;padding:4px 2px}
+.typing i{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:b 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}.typing i:nth-child(3){animation-delay:.3s}
+@keyframes b{0%,60%,100%{opacity:.3;transform:none}30%{opacity:1;transform:translateY(-4px)}}
+.chips{display:flex;gap:8px;flex-wrap:wrap;padding:0 20px 12px}
+.chip{padding:7px 13px;border-radius:999px;background:var(--chip);color:var(--chip-text);font-size:13px;transition:.15s}
+.chip:hover{background:var(--brand);color:#fff}
+.composer{display:flex;gap:10px;padding:14px 16px;border-top:1px solid var(--line)}
+.composer input{flex:1;padding:12px 16px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-size:15px}
+.btn{padding:11px 20px;border-radius:12px;background:linear-gradient(135deg,var(--brand),#6366f1);color:#fff;font-weight:600;transition:.15s}
+.btn:hover{filter:brightness(1.1)}
+.btn:disabled{opacity:.6;cursor:wait}
+
+/* todo */
+.todo{display:flex;flex-direction:column;padding:18px;min-height:0}
+.todo h2{font-size:16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.badge{font-size:12px;background:var(--chip);color:var(--chip-text);padding:2px 9px;border-radius:999px}
+.todo ul{list-style:none;padding:0;flex:1;overflow-y:auto;margin-bottom:12px}
+.todo li{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:10px;background:var(--bg);margin-bottom:7px;font-size:14px}
+.todo li span{flex:1;word-break:break-word}
+.todo li button{color:var(--muted);font-size:18px;line-height:1;padding:0 4px;border-radius:6px}
+.todo li button:hover{color:#ef4444}
+.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 8px}
+.todo form{display:flex;gap:8px}
+.todo input{flex:1;min-width:0;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.todo .btn{padding:10px 14px}
+
+/* map view */
+.map-wrap{flex:1;min-height:0;display:grid;grid-template-columns:1fr 310px;gap:18px}
+.map-card{padding:10px;display:flex;min-height:0}
+.map-card svg{width:100%;height:100%}
+.panel{padding:20px;overflow-y:auto}
+.panel label{display:block;font-size:12.5px;color:var(--muted);margin:12px 0 5px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.panel select,.panel input[type=number],.panel input[type=text]{width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg)}
+.panel .btn{width:100%;margin-top:16px}
+.result{margin-top:18px;font-size:14px;line-height:1.6}
+.result h3{font-size:13px;display:flex;align-items:center;gap:7px;margin:12px 0 3px}
+.dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12.5px;color:var(--muted);margin-top:14px}
+.note{margin-top:14px;padding:10px 12px;border-radius:10px;background:var(--bot);font-size:13px;color:var(--muted)}
+.edge{stroke:var(--line);stroke-width:3;stroke-linecap:round}
+.node circle{fill:var(--panel);stroke:var(--brand);stroke-width:3}
+.node.on circle{fill:var(--brand)}
+.node text{fill:var(--text);font-size:12.5px;font-weight:600;text-anchor:middle;paint-order:stroke;stroke:var(--panel);stroke-width:4px;stroke-linejoin:round}
+.p-bfs{stroke:var(--brand-2);stroke-width:11;opacity:.45;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.p-astar{stroke:var(--ok);stroke-width:4.5;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 0}
+
+/* lab view */
+.lab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-bottom:16px}
+.demo{padding:16px;display:flex;flex-direction:column;gap:8px}
+.demo.sel{border-color:var(--brand);box-shadow:0 0 0 2px rgba(79,70,229,.25)}
+.demo b{font-size:15px}
+.demo p{font-size:13px;color:var(--muted);flex:1;line-height:1.45}
+.tag{align-self:flex-start;font-size:11px;background:var(--chip);color:var(--chip-text);padding:2px 9px;border-radius:999px;font-weight:600}
+.demo input{padding:8px 10px;border-radius:9px;border:1px solid var(--line);background:var(--bg);width:100%}
+.demo .btn{padding:9px 14px;font-size:14px}
+.term{flex:1;min-height:180px;display:flex;flex-direction:column;overflow:hidden}
+.term-bar{padding:9px 14px;font-size:12.5px;color:var(--muted);border-bottom:1px solid var(--line);display:flex;justify-content:space-between}
+.term pre{flex:1;margin:0;padding:14px 16px;overflow:auto;background:var(--term-bg);color:var(--term-text);font:12.5px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;border-radius:0 0 16px 16px}
+.scroll{overflow-y:auto;min-height:0;flex:1;display:flex;flex-direction:column}
+
+@media (max-width:980px){
+  body{flex-direction:column;overflow:auto}
+  .side{width:100%;flex-direction:row;align-items:center;padding:10px 12px;gap:8px}
+  .brand{padding:0 8px 0 0}.brand small,.side-foot span{display:none}
+  .nav{display:flex;gap:4px}.nav button{margin:0;padding:9px 11px}.nav button span{display:none}
+  .side-foot{margin:0 0 0 auto}.side-foot button{margin:0;width:auto}
+  main{padding:14px;overflow:visible}
+  .chat-grid,.map-wrap{grid-template-columns:1fr}
+  .chat{height:70vh}.map-card{height:380px}
+  .row{max-width:94%}
+}
+</style>
+</head>
+<body>
+<aside class="side">
+  <div class="brand"><div class="logo">🧭</div><div><b>Compass</b><small>AI Campus Assistant</small></div></div>
+  <nav class="nav" aria-label="Main">
+    <button class="active" data-view="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-5.4A8 8 0 1 1 21 12z"/></svg><span>Assistant</span></button>
+    <button data-view="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2zM9 4v14M15 6v14"/></svg><span>Campus Map</span></button>
+    <button data-view="lab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L4.5 19a1.5 1.5 0 0 0 1.3 2.2h12.4a1.5 1.5 0 0 0 1.3-2.2L14 9V3"/></svg><span>AI Lab</span></button>
+  </nav>
+  <div class="side-foot">
+    <button id="theme"><span id="theme-ico">🌙</span><span id="theme-txt">Dark mode</span></button>
+    <span>AIP203 · AI Lab mini project</span>
+  </div>
+</aside>
+
+<main>
+  <!-- ASSISTANT -->
+  <section class="view active" id="view-chat">
+    <h1>Hello there! 👋</h1>
+    <p class="sub">Ask in plain English – routes, tasks, maths, weather, Wikipedia, jokes and more.</p>
+    <div class="chat-grid">
+      <div class="card chat">
+        <div class="msgs" id="msgs" aria-live="polite"></div>
+        <div class="chips" id="chips"></div>
+        <form class="composer" id="composer" autocomplete="off">
+          <input id="input" type="text" placeholder="Type a message… e.g. route from library to canteen" maxlength="500" aria-label="Message">
+          <button class="btn" id="send" type="submit">Send</button>
+        </form>
+      </div>
+      <aside class="card todo">
+        <h2>My to-do list <span class="badge" id="todo-count">0</span></h2>
+        <ul id="todo-list"></ul>
+        <form id="todo-form" autocomplete="off">
+          <input id="todo-input" type="text" placeholder="New task…" maxlength="120" aria-label="New task">
+          <button class="btn" type="submit">Add</button>
+        </form>
+      </aside>
+    </div>
+  </section>
+
+  <!-- MAP -->
+  <section class="view" id="view-map">
+    <h1>Campus Map</h1>
+    <p class="sub">Compare BFS (fewest stops) with A* (shortest distance) on the campus road graph.</p>
+    <div class="map-wrap">
+      <div class="card map-card"><svg id="map" viewBox="-50 -40 440 350" role="img" aria-label="Campus map"></svg></div>
+      <div class="card panel">
+        <label for="from">From</label><select id="from"></select>
+        <label for="to">To</label><select id="to"></select>
+        <button class="btn" id="go">Find route</button>
+        <div class="result" id="route-result"></div>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--brand-2);opacity:.5"></i> BFS path</span>
+          <span><i class="dot" style="background:var(--ok)"></i> A* path</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI LAB -->
+  <section class="view" id="view-lab">
+    <h1>AI Lab</h1>
+    <p class="sub">Run the algorithms from the AIP203 syllabus and read their step-by-step output.</p>
+    <div class="scroll">
+      <div class="lab-grid" id="lab-grid"></div>
+      <div class="card term">
+        <div class="term-bar"><span id="term-title">Output</span><span id="term-state"></span></div>
+        <pre id="term-out">Choose a demo above and press Run.</pre>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const pretty = n => n.replace(/\b\w/g, c => c.toUpperCase()).replace(/^Cs /, "CS ");
+
+async function api(path, body) {
+  const opts = body === undefined ? {} : {method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)};
+  const res = await fetch(path, opts);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Request failed");
+  return data;
+}
+
+/* ---------- theme ---------- */
+function setTheme(t) {
+  document.documentElement.dataset.theme = t;
+  $("#theme-ico").textContent = t === "dark" ? "☀️" : "🌙";
+  $("#theme-txt").textContent = t === "dark" ? "Light mode" : "Dark mode";
+  try { localStorage.setItem("compass-theme", t); } catch (e) {}
+}
+$("#theme").onclick = () => setTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+(() => { let t = "light"; try { t = localStorage.getItem("compass-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"); } catch (e) {} setTheme(t); })();
+
+/* ---------- navigation ---------- */
+function show(view) {
+  document.querySelectorAll(".view").forEach(v => v.classList.toggle("active", v.id === "view-" + view));
+  document.querySelectorAll(".nav button").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  if (view === "map") initMap().then(findRoute);
+  if (view === "lab" && !labReady) initLab();
+}
+document.querySelectorAll(".nav button").forEach(b => b.onclick = () => show(b.dataset.view));
+
+/* ---------- chat ---------- */
+const msgs = $("#msgs");
+function addMsg(role, text, meta, route) {
+  const row = document.createElement("div");
+  row.className = "row " + role;
+  const av = document.createElement("div");
+  av.className = "avatar"; av.textContent = role === "user" ? "You" : "🧭";
+  const col = document.createElement("div");
+  const bub = document.createElement("div");
+  bub.className = "bubble"; bub.textContent = text;
+  col.appendChild(bub);
+  if (route) {
+    const a = document.createElement("button");
+    a.className = "map-link"; a.textContent = "🗺️ View this route on the map";
+    a.onclick = () => { show("map"); initMap().then(() => { $("#from").value = route[0]; $("#to").value = route[1]; findRoute(); }); };
+    col.appendChild(a);
+  }
+  if (meta) { const m = document.createElement("div"); m.className = "meta"; m.textContent = meta; col.appendChild(m); }
+  row.append(av, col);
+  msgs.appendChild(row);
+  msgs.scrollTop = msgs.scrollHeight;
+  return row;
+}
+function typing() {
+  const row = addMsg("bot", "");
+  row.querySelector(".bubble").innerHTML = '<span class="typing"><i></i><i></i><i></i></span>';
+  return row;
+}
+async function sendMessage(text) {
+  text = text.trim();
+  if (!text) return;
+  addMsg("user", text);
+  const wait = typing();
+  $("#send").disabled = true;
+  try {
+    const r = await api("/api/chat", {message: text});
+    wait.remove();
+    const meta = r.confidence < 1 ? `intent: ${r.intent} · confidence ${Math.round(r.confidence * 100)}%` : "";
+    addMsg("bot", r.reply, meta, r.route);
+    if (r.open) show(r.open);
+    loadTodos();
+  } catch (e) {
+    wait.remove(); addMsg("bot", "Sorry, something went wrong: " + e.message);
+  }
+  $("#send").disabled = false;
+  $("#input").focus();
+}
+$("#composer").onsubmit = e => { e.preventDefault(); const i = $("#input"); const t = i.value; i.value = ""; sendMessage(t); };
+[["What time is it?", "what time is it"], ["Route: Library → Canteen", "route from library to canteen"],
+ ["Route: Gate → Hostel", "route from main gate to hostel"], ["Calculate 25 × 4 + 10", "calculate 25 * 4 + 10"],
+ ["Weather in Ahmedabad", "weather Ahmedabad"], ["Study tip", "give me a study tip"], ["Tell me a joke", "tell me a joke"],
+ ["Open AI demos", "demo"], ["Help", "help"]].forEach(([label, text]) => {
+  const c = document.createElement("button"); c.className = "chip"; c.textContent = label; c.onclick = () => sendMessage(text);
+  $("#chips").appendChild(c);
+});
+addMsg("bot", "Hello! I'm Compass, your campus guide 🧭\nTry a quick action below, or type something like “remind me to submit assignment”.");
+
+/* ---------- to-do ---------- */
+function renderTodos(tasks) {
+  const ul = $("#todo-list"); ul.innerHTML = "";
+  $("#todo-count").textContent = tasks.length;
+  if (!tasks.length) { ul.innerHTML = '<div class="empty">No tasks yet.<br>Add one below or say “todo add …”.</div>'; return; }
+  tasks.forEach((t, i) => {
+    const li = document.createElement("li");
+    const s = document.createElement("span"); s.textContent = t;
+    const b = document.createElement("button"); b.textContent = "×"; b.title = "Remove task"; b.setAttribute("aria-label", "Remove task " + (i + 1));
+    b.onclick = async () => renderTodos((await api("/api/todos", {action: "remove", index: i})).tasks);
+    li.append(s, b); ul.appendChild(li);
+  });
+}
+async function loadTodos() { try { renderTodos((await api("/api/todos")).tasks); } catch (e) {} }
+$("#todo-form").onsubmit = async e => {
+  e.preventDefault();
+  const i = $("#todo-input"); const text = i.value.trim(); if (!text) return;
+  i.value = "";
+  renderTodos((await api("/api/todos", {action: "add", text})).tasks);
+};
+
+/* ---------- campus map ---------- */
+let mapPromise = null, mapData = null, routeToken = 0;
+const NS = "http://www.w3.org/2000/svg";
+function el(name, attrs, parent) {
+  const n = document.createElementNS(NS, name);
+  for (const k in attrs) n.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(n);
+  return n;
+}
+function drawMap(bfs, astar) {
+  const svg = $("#map"); svg.innerHTML = "";
+  const P = mapData.places;
+  mapData.edges.forEach(([a, b]) => el("line", {class: "edge", x1: P[a].x, y1: P[a].y, x2: P[b].x, y2: P[b].y}, svg));
+  const line = (path, cls) => path && el("polyline", {class: cls, points: path.map(n => P[n].x + "," + P[n].y).join(" ")}, svg);
+  line(bfs, "p-bfs"); line(astar, "p-astar");
+  const onPath = new Set([...(bfs || []), ...(astar || [])]);
+  Object.entries(P).forEach(([name, p]) => {
+    const g = el("g", {class: "node" + (onPath.has(name) ? " on" : "")}, svg);
+    el("circle", {cx: p.x, cy: p.y, r: 9}, g);
+    const t = el("text", {x: p.x, y: p.y - 16}, g); t.textContent = pretty(name);
+  });
+}
+function initMap() {
+  if (!mapPromise) mapPromise = buildMap();
+  return mapPromise;
+}
+async function buildMap() {
+  mapData = await api("/api/map");
+  const names = Object.keys(mapData.places);
+  ["from", "to"].forEach((id, k) => {
+    const sel = $("#" + id);
+    names.forEach(n => sel.add(new Option(pretty(n), n)));
+    sel.selectedIndex = k === 0 ? 0 : names.indexOf("hostel");
+  });
+  drawMap();
+}
+async function findRoute() {
+  const out = $("#route-result");
+  const token = ++routeToken;
+  try {
+    const r = await api(`/api/route?start=${encodeURIComponent($("#from").value)}&goal=${encodeURIComponent($("#to").value)}`);
+    if (token !== routeToken) return;   // a newer request replaced this one
+    drawMap(r.bfs, r.astar);
+    const fmt = p => p.map(pretty).join(" → ");
+    const same = fmt(r.bfs) === fmt(r.astar);
+    out.innerHTML = "";
+    const add = (title, color, text) => {
+      const h = document.createElement("h3"); const d = document.createElement("i"); d.className = "dot"; d.style.background = color;
+      h.append(d, title); const p = document.createElement("div"); p.textContent = text; out.append(h, p);
+    };
+    add(`BFS · ${r.bfs.length - 1} stops`, "var(--brand-2)", fmt(r.bfs));
+    add(`A* · ${r.metres} m`, "var(--ok)", fmt(r.astar));
+    const n = document.createElement("div"); n.className = "note";
+    n.textContent = same ? "Both algorithms agree on this route." : "BFS minimises the number of stops; A* minimises the walking distance, so they can differ.";
+    out.appendChild(n);
+  } catch (e) { if (token === routeToken) out.textContent = e.message; }
+}
+$("#go").onclick = findRoute;
+["from", "to"].forEach(id => $("#" + id).onchange = findRoute);
+
+/* ---------- AI lab ---------- */
+let labReady = false;
+async function initLab() {
+  labReady = true;
+  const grid = $("#lab-grid");
+  (await api("/api/demos")).demos.forEach(d => {
+    const card = document.createElement("div"); card.className = "card demo";
+    const tag = document.createElement("span"); tag.className = "tag"; tag.textContent = d.tag;
+    const title = document.createElement("b"); title.textContent = d.title;
+    const desc = document.createElement("p"); desc.textContent = d.desc;
+    card.append(tag, title, desc);
+    let input = null;
+    if (d.input) {
+      input = document.createElement("input");
+      input.type = d.input.type; input.value = d.input.value; input.setAttribute("aria-label", d.input.label); input.placeholder = d.input.label;
+      if (d.input.type === "number") { input.min = d.input.min; input.max = d.input.max; }
+      card.appendChild(input);
+    }
+    const run = document.createElement("button"); run.className = "btn"; run.textContent = "▶ Run";
+    run.onclick = async () => {
+      document.querySelectorAll(".demo").forEach(c => c.classList.remove("sel")); card.classList.add("sel");
+      $("#term-title").textContent = d.title; $("#term-state").textContent = "running…"; run.disabled = true;
+      try { $("#term-out").textContent = (await api("/api/demo", {id: d.id, value: input ? input.value : ""})).output; $("#term-state").textContent = "done"; }
+      catch (e) { $("#term-out").textContent = e.message; $("#term-state").textContent = "error"; }
+      run.disabled = false; $("#term-out").scrollTop = 0;
+    };
+    card.appendChild(run); grid.appendChild(card);
+  });
+}
+
+loadTodos();
+</script>
+</body>
+</html>
