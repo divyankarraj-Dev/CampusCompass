@@ -2,7 +2,7 @@
 
 Like a compass, it shows the way – around the campus and through the AIP203 syllabus.
 
-> **Course:** AIP203 – Artificial Intelligence Lab (1 credit, L-T-P 0-0-2)
+> **Course:** AIP203 – Artificial Intelligence Lab 
 > **Project:** Mini Project – Build a Virtual Assistant
 > **Assistant topic:** Campus Virtual Assistant for college students
 > **Student:** Divyankar Raj  |  **Roll No.:** 2025KUAD3040
